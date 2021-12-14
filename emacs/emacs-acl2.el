@@ -274,25 +274,25 @@ currently exist and has never been created by this function."
                  "*")))
 
 ; Avoid killing shell buffers by accident:
-(defun kill-buffer-without-process (name)
-  "Kill a buffer unless there's a process associated with it."
-  (interactive
-   (let (val
-         (default-name (buffer-name (current-buffer)))
-         (table
-          (mapcar (function (lambda (x) (cons (buffer-name x) x))) (buffer-list))))
-     (setq val (completing-read (format "Kill buffer: (default: %s) "
-                                        default-name)
-                                table
-                                nil
-                                t))
-     (list (if (equal val "")
-               default-name val))))
-  (if (get-buffer-process name)
-      (error "Process is active in the indicated buffer.  Use meta-x kill-buffer instead.")
-    (kill-buffer name)))
+;; (defun kill-buffer-without-process (name)
+;;   "Kill a buffer unless there's a process associated with it."
+;;   (interactive
+;;    (let (val
+;;          (default-name (buffer-name (current-buffer)))
+;;          (table
+;;           (mapcar (function (lambda (x) (cons (buffer-name x) x))) (buffer-list))))
+;;      (setq val (completing-read (format "Kill buffer: (default: %s) "
+;;                                         default-name)
+;;                                 table
+;;                                 nil
+;;                                 t))
+;;      (list (if (equal val "")
+;;                default-name val))))
+;;   (if (get-buffer-process name)
+;;       (error "Process is active in the indicated buffer.  Use meta-x kill-buffer instead.")
+;;     (kill-buffer name)))
 
-(define-key (current-global-map) "\C-Xk" 'kill-buffer-without-process)
+;; (define-key (current-global-map) "\C-Xk" 'kill-buffer-without-process)
 
 ; Variable *acl2-shell* is the name of the "ACL2 shell", the buffer to which
 ; forms are written by various commands defined in this file.  Control-t c
