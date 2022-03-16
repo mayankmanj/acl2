@@ -395,7 +395,7 @@ current line or, if the car is :not -- e.g., (:not \".*%[ ]*$\" \".*$[
   (let* ((str (acl2-current-form-string))
          (buf (get-buffer *acl2-shell*))
          (win (if elsewhere
-                  (get-buffer-window buf)
+                  (get-buffer-window buf 'visible)
                 (selected-window)))
          (patterns *acl2-insert-pats*))
     (unless buf
