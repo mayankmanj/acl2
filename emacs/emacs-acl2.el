@@ -201,6 +201,9 @@
  '(("(\\(def\\w*\\)\\_>\\s *\\(\\(?:\\sw\\|\\s_\\)+\\)?"
     (1 font-lock-keyword-face nil t)
     (2 font-lock-function-name-face nil t))
+   ("(\\(local-def\\w*\\)\\_>\\s *\\(\\(?:\\sw\\|\\s_\\)+\\)?"
+    (1 font-lock-keyword-face nil t)
+    (2 font-lock-function-name-face nil t))
    ("(\\(defattach\\|defevaluator\||defrefinement\\)\\_>\\s *\\(\\(?:\\sw\\|\\s_\\)+\\)?\\s *\\(\\(?:\\sw\\|\\s_\\)+\\)?"
     (1 font-lock-keyword-face nil t)
     (2 font-lock-function-name-face nil t)
@@ -731,7 +734,7 @@ then also ignore case if that argument is positive, else do not ignore case."
 (defun my-lisp-mode-hook ()
   (setq indent-tabs-mode nil)
   (setq comment-column 0)
-  (turn-on-auto-fill)
+  ;; (turn-on-auto-fill)
   )
 
 (if (not (boundp 'lisp-mode-hook)) (setq lisp-mode-hook nil))
