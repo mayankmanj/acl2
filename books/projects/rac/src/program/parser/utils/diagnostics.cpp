@@ -33,7 +33,7 @@ void DiagnosticHandler::show_code_at(const Location &context,
   // Move the cursor to the begin of the area we need to report.
   assert(fseek(file_, cur_pos, SEEK_SET) == 0);
 
-  static char *buffer = nullptr;
+  char *buffer = nullptr;
   size_t size = 0;
 
   // By default, we show all the context...
