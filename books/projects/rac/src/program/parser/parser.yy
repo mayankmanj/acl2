@@ -200,7 +200,8 @@ while (0)
 %type<tpd> template_param_dec
 %type<tdl> template_param_dec_list nontrivial_template_param_dec_list
 %type<stml> statement_list r_statement_list
-%type<stm> statement r_statement block r_block var_dec const_dec untyped_var_dec untyped_const_dec
+%type<stm> statement r_statement block r_block var_dec param_dec const_dec
+%type<stm> untyped_var_dec untyped_param_dec untyped_const_dec
 %type<stm> for_statement for_init multiple_var_dec multiple_const_dec null_statement final_statement
 %type<stm> if_statement switch_statement break_statement
 %type<stm> simple_statement assignment multiple_assignment assertion return_statement
@@ -809,7 +810,22 @@ var_dec
     {
       ((VarDec *)$$)->set_type($1);
     }
-};
+}
+    | type_spec '*' untyped_var_dec
+{
+  yyast.diag()
+      .new_error(@2, "Pointers are forbidden")
+      .report();
+  YYERROR;
+}
+    | type_spec '&' untyped_var_dec
+{
+  yyast.diag()
+      .new_error(@2, "References are forbidden, except if they are used as function parameter")
+      .report();
+  YYERROR;
+}
+;
 
 untyped_var_dec
     : ID
@@ -886,6 +902,98 @@ untyped_var_dec
   }
 };
 
+param_dec
+    : type_spec untyped_param_dec
+{
+  $$ = $2;
+  Type *t = ((VarDec *)$$)->get_type();
+  if (t)
+    {
+      ((ArrayType *)t)->baseType = $1;
+    }
+  else
+    {
+      ((VarDec *)$$)->set_type($1);
+    }
+}
+  | type_spec '&' untyped_param_dec
+{
+  yyast.diag()
+      .new_error(@1, "Mutable references are forbidden")
+      .context(@$)
+      .note("Try adding `const` here")
+      .note_location(@0)
+      .report();
+  YYERROR;
+}
+  | type_spec '*' untyped_param_dec
+{
+  yyast.diag()
+      .new_error(@2, "Pointers are forbidden")
+      .report();
+  YYERROR;
+}
+    | CONST type_spec '&' untyped_param_dec
+{
+  $$ = $4;
+  Type *t = ((VarDec *)$$)->get_type();
+  if (t)
+    {
+      ((ArrayType *)t)->baseType = $2;
+    }
+  else
+    {
+      ((VarDec *)$$)->set_type($2);
+    }
+}
+    | CONST type_spec untyped_param_dec
+{
+  $$ = $3;
+  Type *t = ((VarDec *)$$)->get_type();
+  if (t)
+    {
+      ((ArrayType *)t)->baseType = $2;
+    }
+  else
+    {
+      ((VarDec *)$$)->set_type($2);
+    }
+}
+;
+
+untyped_param_dec
+    : ID
+{
+  bool error = register_with_new_id(symTab, $1, @$,
+    [&]() {
+      $$ = new VarDec (@$, $1, nullptr);
+      symTab.push ((VarDec *)$$);
+    });
+  if (error) {
+    YYERROR;
+  }
+}
+    | ID '[' arithmetic_expression ']'
+{
+  if (!$3->isStaticallyEvaluable () || $3->evalConst () <= 0)
+    {
+      yyast.diag()
+          .new_error(@3, "Invalid array size (it shoud be a constant, stricly "
+                      "positive expression)")
+          .context(@$)
+          .report();
+      YYERROR;
+    }
+  bool error = register_with_new_id(symTab, $1, @$,
+    [&]() {
+      $$ = new VarDec (@$, $1, new ArrayType (@$, $3, nullptr));
+      symTab.push ((VarDec *)$$);
+  });
+  if (error) {
+    YYERROR;
+  }
+};
+
 array_or_struct_init
     : '{' init_list '}'
 {
@@ -913,7 +1021,22 @@ const_dec
     {
       ((ConstDec *)$$)->set_type($2);
     }
-};
+}
+    | CONST type_spec '*' untyped_var_dec
+{
+  yyast.diag()
+      .new_error(@1, "Pointers are forbidden")
+      .report();
+  YYERROR;
+}
+    | CONST type_spec '&' untyped_var_dec
+{
+  yyast.diag()
+      .new_error(@3, "References are forbidden, except if they are used as function parameter")
+      .report();
+  YYERROR;
+}
+;
 
 untyped_const_dec
     : ID '=' expression
@@ -1236,13 +1359,13 @@ param_dec_list
     | nontrivial_param_dec_list;
 
 nontrivial_param_dec_list
-    : var_dec
+    : param_dec
 {
   $$ = new std::vector<VarDec *>();
   $$->reserve(10);
   $$->push_back((VarDec *)$1);
 }
-    | nontrivial_param_dec_list ',' var_dec
+    | nontrivial_param_dec_list ',' param_dec
 {
   $$ = $1;
   $$->push_back((VarDec *)$3);
