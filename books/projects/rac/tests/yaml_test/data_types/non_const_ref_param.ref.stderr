@@ -1,6 +1,6 @@
-non_const_ref_param.cpp:3 (8-11): Mutable references are forbidden
+non_const_ref_param.cpp:3 (8-11): Reference must be constant
  3 | int foo(int& a) {
    |         ^^^
-note: Try adding `const` here
+note: Consider adding `const` here
  3 | int foo(int& a) {
    |        ^
