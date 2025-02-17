@@ -2,7 +2,6 @@
 #include "utils.h"
 
 #include <cassert>
-#include <limits>
 
 std::ostream &operator<<(std::ostream &os, const Location &loc) {
 

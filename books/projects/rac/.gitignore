@@ -254,6 +254,10 @@ tests/env/
 *.cpp.i
 *.pc
 
+# Profile output
+*.gcda
+*.gcno
+
 # Yacc/Bison generated files
 src/program/parser/lex.yy.cpp
 src/program/parser/parser.tab.hpp

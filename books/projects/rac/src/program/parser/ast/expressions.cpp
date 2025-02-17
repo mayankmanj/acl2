@@ -572,7 +572,20 @@ Sexpression *PrefixExpr::ACL2Expr() {
     return s;
   } else if (op == Op::UnaryMinus) {
     Sexpression *s_val = expr->get_type()->eval(s);
-    return new Plist({ &s_minus, s_val });
+    Sexpression *sexpr = new Plist({ &s_minus, s_val });
+
+    if (auto pt = dynamic_cast<const IntType *>(get_type())) {
+      Sexpression *upper_bound = nullptr;
+      upper_bound = pt->width()->isStaticallyEvaluable()
+        ? Integer(this->loc(), this->ACL2ValWidth() - 1).ACL2Expr()
+        : new Plist(
+            { &s_minus, pt->width()->ACL2Expr(), new Symbol(1) });
+
+      sexpr = new Plist({ &s_bits, sexpr, upper_bound,
+                        Integer::zero_v(this->loc())->ACL2Expr() });
+    }
+
+    return sexpr;
 
   } else if (op == Op::Not) {
     return new Plist({ &s_lognot1, s });
