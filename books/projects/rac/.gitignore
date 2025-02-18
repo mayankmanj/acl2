@@ -257,6 +257,9 @@ tests/env/
 # Profile output
 *.gcda
 *.gcno
+*.gcov
+*.html
+*.css
 
 # Yacc/Bison generated files
 src/program/parser/lex.yy.cpp
@@ -266,3 +269,4 @@ src/program/parser/parser.output
 
 # Gnererated tools
 bin/*
+src/parse

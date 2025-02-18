@@ -53,9 +53,6 @@ Constant::Constant(NodesId id, Location loc, const char *n)
 Constant::Constant(NodesId id, Location loc, std::string &&n)
     : Expression(id, loc), name_(std::move(n)) {}
 
-Constant::Constant(NodesId id, Location loc, int n)
-    : Expression(id, loc), name_(std::to_string(n)) {}
-
 bool Constant::isStaticallyEvaluable() { return true; }
 
 Sexpression *Constant::ACL2Expr() { return new Symbol(name_); }
@@ -367,14 +364,11 @@ void ArrayRef::display(std::ostream &os) const {
 Sexpression *ArrayRef::ACL2Expr() {
   if (isa<const ArrayType *>(array->get_type())) {
     Sexpression *s = nullptr;
-    SymRef *ref = dynamic_cast<SymRef *>(array);
 
+    SymRef *ref = dynamic_cast<SymRef *>(array);
     if (ref && ref->symDec->isGlobal()) {
       s = new Plist(
           { &s_nth, index->ACL2Expr(), new Plist({ ref->symDec->sym }) });
-    } else if (ref && ref->symDec->isGlobal()) {
-      s = new Plist(
-          { &s_ag, index->ACL2Expr(), new Plist({ ref->symDec->sym }) });
     } else {
       s = new Plist({ &s_ag, index->ACL2Expr(), array->ACL2Expr() });
     }
