@@ -39,3 +39,13 @@
 
 - name: invalid-cast
   should_report_error: true
+
+- name: duplicate-template-fun
+  should_report_error: true
+
+- name: duplicate-param-fun
+  should_report_error: true
+
+- name: duplicate-param-fun-2
+  should_report_error: true
+
