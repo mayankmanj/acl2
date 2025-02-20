@@ -143,3 +143,5 @@
 - name: struct-default-values-partially-init
 
 - name: global-arrays
+
+- name: const-arrays
