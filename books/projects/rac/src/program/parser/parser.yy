@@ -164,7 +164,7 @@ while (0)
 
 %define parse.trace
 
-%token TYPEDEF CONST STRUCT ENUM TEMPLATE
+%token TYPEDEF CONST STATIC STRUCT ENUM TEMPLATE
 %token INT UINT INT64 UINT64 BOOL
 %token SLC SET_SLC
 %token FOR IF ELSE WHILE DO SWITCH CASE DEFAULT BREAK RETURN ASSERT
@@ -189,7 +189,7 @@ while (0)
 %type<ecd> enum_const_dec
 %type<ecdl> enum_const_dec_list
 %type<b> boolean
-%type<exp> expression constant integer symbol_ref funcall
+%type<exp> expression constant integer symbol_ref funcall init_val
 %type<exp> array_or_bit_ref subrange array_or_struct_init case_label
 %type<exp> primary_expression postfix_expression prefix_expression mult_expression add_expression
 %type<exp> arithmetic_expression rel_expression eq_expression and_expression xor_expression ior_expression
@@ -326,7 +326,18 @@ typedef_type
 }; // name of a previously declared type
 
 type_spec
-    : CONST type_spec_non_const
+    : CONST STATIC type_spec_non_const
+{
+  Type *t = $3->deep_copy();
+  t->setConst();
+  $$ = t;
+}
+    | STATIC CONST type_spec_non_const
+{
+  Type *t = $3->deep_copy();
+  t->setConst();
+  $$ = t;
+}   | CONST type_spec_non_const
 {
   Type *t = $2->deep_copy();
   t->setConst();
@@ -1012,17 +1023,18 @@ untyped_param_dec
 
 array_or_struct_init
     : '{' init_list '}'
+
 {
   $$ = new Initializer (@$, *$2);
-}
-    | '{' '}'
-{
-  $$ = new Initializer (@$, {});
 };
 
 init_list
-    : expression { $$ = new std::vector<Expression *>(); $$->push_back($1); }
-    | init_list ',' expression { $$ = $1; $$->push_back($3); };
+  :  init_val { $$ = new std::vector<Expression *>(); $$->push_back($1); }
+  |  init_list ',' init_val { $$ = $1; $$->push_back($3); };
+
+init_val
+  : expression
+  | array_or_struct_init {$$ = $1;};
 
 multiple_var_dec
     : var_dec ',' untyped_var_dec

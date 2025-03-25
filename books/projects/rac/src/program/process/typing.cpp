@@ -858,7 +858,7 @@ bool TypingAction::check_assignement(const Location &where, const Type *left,
 
       auto is_correct =
           std::all_of(t->types().begin(), t->types().end(), [&](const Type *t) {
-            if (!t->canBeImplicitlyCastTo(arrayBaseType)) {
+            if (!check_assignement(where, arrayBaseType, t)) {
               diag_
                   .new_error(
                       where,
@@ -891,7 +891,7 @@ bool TypingAction::check_assignement(const Location &where, const Type *left,
       auto is_correct =
           std::all_of(t->types().begin(), t->types().end(), [&](const Type *t) {
             const Type *field_type = struct_->fields()[i]->get_type();
-            if (!t->canBeImplicitlyCastTo(deref(field_type))) {
+            if (!check_assignement(where, deref(field_type), t)) {
               diag_
                   .new_error(
                       where,

@@ -372,7 +372,7 @@ Sexpression *ArrayRef::ACL2Expr() {
     Sexpression *s = nullptr;
 
     SymRef *ref = dynamic_cast<SymRef *>(array);
-    if (ref && ref->symDec->get_type()->isConst()) {
+    if (ref && ref->symDec->get_type()->isConst() && ref->symDec->isGlobal()) {
       s = new Plist({&s_nth, index->ACL2Expr(), new Plist({ref->symDec->sym})});
     } else {
       s = new Plist({&s_ag, index->ACL2Expr(), array->ACL2Expr()});
