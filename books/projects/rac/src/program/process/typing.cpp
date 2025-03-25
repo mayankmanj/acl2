@@ -815,16 +815,16 @@ bool TypingAction::VisitSymDec(SymDec *s) {
     if (isa<const EnumType *>(s->get_type())) {
       sym_type = intType;
 
-      if (!s->init->isStaticallyEvaluable()) {
-        diag_
-            .new_error(
-                s->init->loc(),
-                format("Expected an integral constant expression, got % s.",
-                       s->init->get_type()->to_string().c_str()))
-            .context(s->loc())
-            .report();
-        return error();
-      }
+      // if (!s->init->isStaticallyEvaluable()) {
+      //   diag_
+      //       .new_error(
+      //           s->init->loc(),
+      //           format("Expected an integral constant expression, got % s.",
+      //                  s->init->get_type()->to_string().c_str()))
+      //       .context(s->loc())
+      //       .report();
+      //   return error();
+      // }
     }
 
     return check_assignement(s->loc(), sym_type, s->init->get_type());
