@@ -492,13 +492,14 @@ Sexpression *ArrayType::default_initializer_value() const {
   // TODO do not support template
   assert(dim->isStaticallyEvaluable());
 
+  result->add(&s_list);
   unsigned size = dim->evalConst();
   for (unsigned i = 0; i < size; ++i) {
     result->add(new Cons(Integer(get_original_location(), i).ACL2Expr(),
                          baseType->default_initializer_value()));
   }
 
-  return new Plist({&s_quote, result});
+  return new Plist({&s_ainit, result});
 }
 
 // class StructField
