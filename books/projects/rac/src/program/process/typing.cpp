@@ -245,6 +245,7 @@ bool TypingAction::VisitArrayRef(ArrayRef *e) {
   } else {
     // AC register
     e->set_type(new IntType(e->loc(), Integer::one_v(e->loc()), Boolean::false_v(e->loc())));
+    // e->set_type(boolType);
   }
   return true;
 }

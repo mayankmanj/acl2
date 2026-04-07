@@ -349,8 +349,8 @@ void MultipleAssignment::displaySimple(std::ostream &os) {
   rval_->display(os);
 }
 
-// In the event that each target of a multiple assignment is a simple variable,
-// the corrersponding S-expression  has the form
+// In the event that each target of a multiple assignment is a simple variable
+// list of the same type, the corrersponding S-expression has the form
 
 //   (MV-ASSIGN (var1 ... vark) fncall).
 
@@ -375,31 +375,66 @@ Sexpression *MultipleAssignment::ACL2Expr() {
 
   std::vector<Symbol *> tmp_vars;
   Plist *vars = new Plist();
-  bool needs_tmp_vars = false;
+
+  const auto *mv_type = dynamic_cast<const MvType *>(rval_->get_type());
+  std::vector<Sexpression *> add_assign(lval_.size(), nullptr);
 
   for (unsigned i = 0; i < lval_.size(); ++i) {
 
     if (SymRef *ref = dynamic_cast<SymRef *>(lval_[i])) {
       vars->add(ref->symDec->sym);
       tmp_vars.push_back(nullptr);
+
+      // If the function returns multiple values (i.e., a tuple) and the lvalue
+      // type differs from the corresponding return component type, model the
+      // implicit per-element conversion by inserting an explicit cast
+      // assignment after the MV-ASSIGN.
+      if (mv_type && i < mv_type->size()) {
+        const Type *dst_t = ref->get_type();
+        const Type *src_t = mv_type->get(i);
+        if (dst_t && src_t && !dst_t->isEqual(src_t)) {
+          auto *src_ref = new SymRef(loc_, ref->symDec);
+          src_ref->set_type(src_t);
+          Sexpression *casted = dst_t->cast(src_ref);
+          if (!sexpr_equal(casted, src_ref->ACL2Expr())) {
+            add_assign[i] = ref->ACL2Assign(casted);
+          }
+        }
+      }
     } else {
       Symbol *s_temp = new Symbol("temp-" + std::to_string(i));
       vars->add(s_temp);
       tmp_vars.push_back(s_temp);
-      needs_tmp_vars = true;
+      Sexpression *rval = tmp_vars[i];
+
+      // If we are assigning from a multiple-value return and the destination
+      // type differs, cast the temporary before writing into the target.
+      if (mv_type && i < mv_type->size() && mv_type->get(i) && lval_[i] &&
+          lval_[i]->get_type() && !lval_[i]->get_type()->isEqual(mv_type->get(i))) {
+        auto *tmp_dec = new TempParamDec(loc_, tmp_vars[i]->getname(), mv_type->get(i));
+        auto *tmp_ref = new SymRef(loc_, tmp_dec);
+        tmp_ref->set_type(mv_type->get(i));
+        Sexpression *casted = lval_[i]->get_type()->cast(tmp_ref);
+        if (!sexpr_equal(casted, tmp_ref->ACL2Expr())) {
+          rval = casted;
+        }
+      }
+
+      add_assign[i] = lval_[i]->ACL2Assign(rval);
     }
   }
 
   Plist *mv_assign = new Plist({&s_mv_assign, vars, rval_->ACL2Expr()});
 
-  if (!needs_tmp_vars) {
+  if (std::all_of(add_assign.begin(), add_assign.end(),
+                  [](Sexpression *s) { return s == nullptr; })) {
     return mv_assign;
   }
 
   Plist *result_with_tmp = new Plist({&s_block});
 
   for (int i = lval_.size() - 1; i >= 0; --i) {
-    if (lval_[i]) {
+    if (tmp_vars[i]) {
       result_with_tmp->add(new Plist({&s_declare, tmp_vars[i]}));
     }
   }
@@ -407,8 +442,8 @@ Sexpression *MultipleAssignment::ACL2Expr() {
   result_with_tmp->add(mv_assign);
 
   for (unsigned i = 0; i < lval_.size(); ++i) {
-    if (lval_[i]) {
-      result_with_tmp->add(lval_[i]->ACL2Assign(tmp_vars[i]));
+    if (add_assign[i]) {
+      result_with_tmp->add(add_assign[i]);
     }
   }
 
