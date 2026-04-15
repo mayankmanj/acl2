@@ -129,10 +129,10 @@ Sexpression *EnumConstDec::ACL2SymExpr() {
 // class VarDec : public SimpleStatement, public SymDec (variable declaration)
 // ---------------------------------------------------------------------------
 
-VarDec::VarDec(Location loc, const char *n, Type *t, Expression *i)
+VarDec::VarDec(Location loc, const char *n, const Type *t, Expression *i)
     : SymDec(idOf(this), loc, n, t, i) {}
 
-VarDec::VarDec(NodesId id, Location loc, const char *n, Type *t, Expression *i)
+VarDec::VarDec(NodesId id, Location loc, const char *n, const Type *t, Expression *i)
     : SymDec(id, loc, n, t, i) {}
 
 void VarDec::displaySimple(std::ostream &os) { displaySymDec(os); }
@@ -376,7 +376,7 @@ Sexpression *MultipleAssignment::ACL2Expr() {
   std::vector<Symbol *> tmp_vars;
   Plist *vars = new Plist();
 
-  const auto *mv_type = dynamic_cast<const MvType *>(rval_->get_type());
+  const auto *mv_type = always_cast<const MvType *>(rval_->get_type());
   std::vector<Sexpression *> add_assign(lval_.size(), nullptr);
 
   for (unsigned i = 0; i < lval_.size(); ++i) {
@@ -389,16 +389,16 @@ Sexpression *MultipleAssignment::ACL2Expr() {
       // type differs from the corresponding return component type, model the
       // implicit per-element conversion by inserting an explicit cast
       // assignment after the MV-ASSIGN.
-      if (mv_type && i < mv_type->size()) {
-        const Type *dst_t = ref->get_type();
-        const Type *src_t = mv_type->get(i);
-        if (dst_t && src_t && !dst_t->isEqual(src_t)) {
-          auto *src_ref = new SymRef(loc_, ref->symDec);
-          src_ref->set_type(src_t);
-          Sexpression *casted = dst_t->cast(src_ref);
-          if (!sexpr_equal(casted, src_ref->ACL2Expr())) {
-            add_assign[i] = ref->ACL2Assign(casted);
-          }
+      const Type *dst_t = ref->get_type();
+      const Type *src_t = mv_type->get(i);
+      if (!dst_t->isEqual(src_t)) {
+        bool has_changed = false;
+        auto *tmp_dec = new VarDec(loc_, tmp_vars[i]->getname(), mv_type->get(i));
+        auto *tmp_ref = new SymRef(loc_, tmp_dec);
+        tmp_ref->set_type(mv_type->get(i));
+        Sexpression *casted = dst_t->cast(tmp_ref, has_changed);
+        if (has_changed) {
+          add_assign[i] = ref->ACL2Assign(casted);
         }
       }
     } else {
@@ -409,13 +409,13 @@ Sexpression *MultipleAssignment::ACL2Expr() {
 
       // If we are assigning from a multiple-value return and the destination
       // type differs, cast the temporary before writing into the target.
-      if (mv_type && i < mv_type->size() && mv_type->get(i) && lval_[i] &&
-          lval_[i]->get_type() && !lval_[i]->get_type()->isEqual(mv_type->get(i))) {
-        auto *tmp_dec = new TempParamDec(loc_, tmp_vars[i]->getname(), mv_type->get(i));
+      if (!lval_[i]->get_type()->isEqual(mv_type->get(i))) {
+        auto *tmp_dec = new VarDec(loc_, tmp_vars[i]->getname(), mv_type->get(i));
         auto *tmp_ref = new SymRef(loc_, tmp_dec);
         tmp_ref->set_type(mv_type->get(i));
-        Sexpression *casted = lval_[i]->get_type()->cast(tmp_ref);
-        if (!sexpr_equal(casted, tmp_ref->ACL2Expr())) {
+        bool has_changed = false;
+        Sexpression *casted = lval_[i]->get_type()->cast(tmp_ref, has_changed);
+        if (has_changed) {
           rval = casted;
         }
       }

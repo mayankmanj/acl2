@@ -83,39 +83,3 @@ Symbol s_setbitn("setbitn");
 Symbol s_setbits("setbits");
 Symbol s_si("si");
 Symbol s_switch("switch");
-
-bool sexpr_equal(const Sexpression *a, const Sexpression *b) {
-  if (a == b) {
-    return true;
-  }
-  if (!a || !b) {
-    return false;
-  }
-
-  if (auto sa = dynamic_cast<const Symbol *>(a)) {
-    auto sb = dynamic_cast<const Symbol *>(b);
-    return sb && std::string(sa->getname()) == sb->getname();
-  }
-
-  if (auto pa = dynamic_cast<const Plist *>(a)) {
-    auto pb = dynamic_cast<const Plist *>(b);
-    if (!pb || pa->size() != pb->size()) {
-      return false;
-    }
-    for (std::size_t i = 0; i < pa->size(); ++i) {
-      if (!sexpr_equal(pa->nth(static_cast<int>(i)),
-                       pb->nth(static_cast<int>(i)))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  if (auto ca = dynamic_cast<const Cons *>(a)) {
-    auto cb = dynamic_cast<const Cons *>(b);
-    return cb && sexpr_equal(ca->car(), cb->car()) &&
-           sexpr_equal(ca->cdr(), cb->cdr());
-  }
-
-  return false;
-}

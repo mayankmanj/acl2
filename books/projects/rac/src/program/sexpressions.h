@@ -25,8 +25,6 @@ public:
   ~Plist() = default;
 
   Sexpression *nth(int i) { return list_[i]; }
-  const Sexpression *nth(int i) const { return list_[i]; }
-  std::size_t size() const { return list_.size(); }
 
   Plist *add(Sexpression *s) {
     list_.push_back(s);
@@ -42,9 +40,6 @@ private:
 class Cons : public Sexpression {
 public:
   Cons(Sexpression *a, Sexpression *d) : car_(a), cdr_(d) {}
-
-  const Sexpression *car() const { return car_; }
-  const Sexpression *cdr() const { return cdr_; }
 
   void display(std::ostream &os) const override {
     os << "(cons ";
@@ -128,7 +123,5 @@ extern Symbol s_setbitn;
 extern Symbol s_setbits;
 extern Symbol s_si;
 extern Symbol s_switch;
-
-bool sexpr_equal(const Sexpression *a, const Sexpression *b);
 
 #endif // SEXPRESSIONS_H
