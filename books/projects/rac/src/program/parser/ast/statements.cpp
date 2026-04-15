@@ -393,9 +393,9 @@ Sexpression *MultipleAssignment::ACL2Expr() {
       const Type *src_t = mv_type->get(i);
       if (!dst_t->isEqual(src_t)) {
         bool has_changed = false;
-        auto *tmp_dec = new VarDec(loc_, tmp_vars[i]->getname(), mv_type->get(i));
+        auto *tmp_dec = new VarDec(loc_, ref->symDec->getname(), src_t);
         auto *tmp_ref = new SymRef(loc_, tmp_dec);
-        tmp_ref->set_type(mv_type->get(i));
+        tmp_ref->set_type(src_t);
         Sexpression *casted = dst_t->cast(tmp_ref, has_changed);
         if (has_changed) {
           add_assign[i] = ref->ACL2Assign(casted);
